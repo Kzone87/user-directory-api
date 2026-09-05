@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/xsd/maven-4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.3.4</version><relativePath/></parent>
-  <groupId>dev.kzone.portfolio</groupId><artifactId>user-directory-api</artifactId><version>6.0.0</version>
+  <groupId>dev.kzone.portfolio</groupId><artifactId>user-directory-api</artifactId><version>7.0.0</version>
   <name>Business Ops Dashboard</name>
-  <description>Full-stack CRM and operations portfolio with customer-linked work orders, priority planning, due dates, RBAC and audit history</description>
+  <description>Full-stack CRM and operations portfolio with RBAC, audit history, priority planning and server-side analytics</description>
   <properties><java.version>17</java.version><springdoc.version>2.6.0</springdoc.version></properties>
   <dependencies>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
