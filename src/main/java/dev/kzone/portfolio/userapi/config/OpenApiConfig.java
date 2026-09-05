@@ -7,9 +7,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
         info = @Info(
-                title = "User Directory API",
-                version = "1.1.0",
-                description = "Searchable user directory REST API with validation, pagination and Excel export"
+                title = "Business Ops Dashboard API",
+                version = "2.0.0",
+                description = "Operations REST API with customer directory, work-order state transitions, validation, pagination and Excel export"
         )
 )
 public class OpenApiConfig {
