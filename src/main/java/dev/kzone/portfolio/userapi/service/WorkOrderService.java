@@ -1,5 +1,6 @@
 package dev.kzone.portfolio.userapi.service;
 
+import dev.kzone.portfolio.userapi.domain.Customer;
 import dev.kzone.portfolio.userapi.domain.WorkOrder;
 import dev.kzone.portfolio.userapi.domain.WorkOrderStatus;
 import dev.kzone.portfolio.userapi.dto.WorkOrderActivityResponse;
@@ -19,13 +20,16 @@ import java.util.List;
 public class WorkOrderService {
     private final WorkOrderMapper workOrderMapper;
     private final WorkOrderActivityMapper workOrderActivityMapper;
+    private final CustomerService customerService;
 
     public WorkOrderService(
             WorkOrderMapper workOrderMapper,
-            WorkOrderActivityMapper workOrderActivityMapper
+            WorkOrderActivityMapper workOrderActivityMapper,
+            CustomerService customerService
     ) {
         this.workOrderMapper = workOrderMapper;
         this.workOrderActivityMapper = workOrderActivityMapper;
+        this.customerService = customerService;
     }
 
     public List<WorkOrderResponse> list(WorkOrderStatus status) {
@@ -45,10 +49,12 @@ public class WorkOrderService {
 
     @Transactional
     public WorkOrderResponse create(WorkOrderCreateRequest request, String actor) {
+        Customer customer = customerService.requireCustomer(request.customerId());
         WorkOrder workOrder = new WorkOrder(
                 null,
                 request.title().trim(),
-                request.customerName().trim(),
+                customer.getId(),
+                customer.getCompanyName(),
                 request.assignee().trim(),
                 WorkOrderStatus.RECEIVED,
                 null,
