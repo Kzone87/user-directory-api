@@ -99,7 +99,8 @@ class UserApiIntegrationTest {
     void exposesOpenApiDocument() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.info.title").value("User Directory API"))
-                .andExpect(jsonPath("$.paths['/api/users/page']").exists());
+                .andExpect(jsonPath("$.info.title").value("Business Ops Dashboard API"))
+                .andExpect(jsonPath("$.paths['/api/users/page']").exists())
+                .andExpect(jsonPath("$.paths['/api/work-orders']").exists());
     }
 }
