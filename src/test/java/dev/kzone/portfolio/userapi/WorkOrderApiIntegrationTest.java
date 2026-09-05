@@ -51,7 +51,7 @@ class WorkOrderApiIntegrationTest {
     void acceptsAllowedStatusTransition() throws Exception {
         mockMvc.perform(patch("/api/work-orders/1/status")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"status":"IN_PROGRESS"}"""))
+                        .content("{\"status\":\"IN_PROGRESS\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
     }
@@ -60,7 +60,7 @@ class WorkOrderApiIntegrationTest {
     void rejectsSkippedStatusTransition() throws Exception {
         mockMvc.perform(patch("/api/work-orders/1/status")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"status":"DONE"}"""))
+                        .content("{\"status\":\"DONE\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("INVALID_WORK_ORDER_TRANSITION"));
     }
@@ -69,7 +69,7 @@ class WorkOrderApiIntegrationTest {
     void terminalStatusCannotTransitionAgain() throws Exception {
         mockMvc.perform(patch("/api/work-orders/3/status")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""{"status":"CANCELLED"}"""))
+                        .content("{\"status\":\"CANCELLED\"}"))
                 .andExpect(status().isConflict());
     }
 }
