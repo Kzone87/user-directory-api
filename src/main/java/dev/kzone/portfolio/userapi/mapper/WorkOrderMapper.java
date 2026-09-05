@@ -15,27 +15,43 @@ import java.util.Optional;
 @Mapper
 public interface WorkOrderMapper {
     @Select("""
-            SELECT id, title, customer_name, assignee, status, created_at, updated_at
-            FROM work_orders
-            WHERE id = #{id}
+            SELECT wo.id,
+                   wo.title,
+                   wo.customer_id,
+                   c.company_name AS customer_name,
+                   wo.assignee,
+                   wo.status,
+                   wo.created_at,
+                   wo.updated_at
+            FROM work_orders wo
+            JOIN customers c ON c.id = wo.customer_id
+            WHERE wo.id = #{id}
             """)
     Optional<WorkOrder> findById(@Param("id") long id);
 
     @Select("""
             <script>
-            SELECT id, title, customer_name, assignee, status, created_at, updated_at
-            FROM work_orders
+            SELECT wo.id,
+                   wo.title,
+                   wo.customer_id,
+                   c.company_name AS customer_name,
+                   wo.assignee,
+                   wo.status,
+                   wo.created_at,
+                   wo.updated_at
+            FROM work_orders wo
+            JOIN customers c ON c.id = wo.customer_id
             <where>
-              <if test='status != null'>status = #{status}</if>
+              <if test='status != null'>wo.status = #{status}</if>
             </where>
-            ORDER BY updated_at DESC, id DESC
+            ORDER BY wo.updated_at DESC, wo.id DESC
             </script>
             """)
     List<WorkOrder> findAll(@Param("status") WorkOrderStatus status);
 
     @Insert("""
-            INSERT INTO work_orders (title, customer_name, assignee, status)
-            VALUES (#{title}, #{customerName}, #{assignee}, #{status})
+            INSERT INTO work_orders (title, customer_id, assignee, status)
+            VALUES (#{title}, #{customerId}, #{assignee}, #{status})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(WorkOrder workOrder);

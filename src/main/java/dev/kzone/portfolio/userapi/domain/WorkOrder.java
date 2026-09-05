@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public class WorkOrder {
     private Long id;
     private String title;
+    private Long customerId;
     private String customerName;
     private String assignee;
     private WorkOrderStatus status;
@@ -14,9 +15,19 @@ public class WorkOrder {
     public WorkOrder() {
     }
 
-    public WorkOrder(Long id, String title, String customerName, String assignee, WorkOrderStatus status, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public WorkOrder(
+            Long id,
+            String title,
+            Long customerId,
+            String customerName,
+            String assignee,
+            WorkOrderStatus status,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {
         this.id = id;
         this.title = title;
+        this.customerId = customerId;
         this.customerName = customerName;
         this.assignee = assignee;
         this.status = status;
@@ -28,6 +39,8 @@ public class WorkOrder {
     public void setId(Long id) { this.id = id; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
+    public Long getCustomerId() { return customerId; }
+    public void setCustomerId(Long customerId) { this.customerId = customerId; }
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
     public String getAssignee() { return assignee; }

@@ -35,15 +35,16 @@ class SecurityApiIntegrationTest {
 
     @Test
     void staffCanReadAndCreateOperationalData() throws Exception {
-        mockMvc.perform(withBasicAuth(get("/api/users"), SecurityConfig.DEMO_STAFF_USERNAME, SecurityConfig.DEMO_STAFF_PASSWORD))
+        mockMvc.perform(withBasicAuth(get("/api/customers"), SecurityConfig.DEMO_STAFF_USERNAME, SecurityConfig.DEMO_STAFF_PASSWORD))
                 .andExpect(status().isOk());
 
         mockMvc.perform(withBasicAuth(post("/api/work-orders"), SecurityConfig.DEMO_STAFF_USERNAME, SecurityConfig.DEMO_STAFF_PASSWORD)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"title":"권한 테스트 업무","customerName":"테스트 고객","assignee":"demo-staff"}
+                                {"title":"권한 테스트 업무","customerId":1,"assignee":"demo-staff"}
                                 """))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.customerId").value(1))
                 .andExpect(jsonPath("$.status").value("RECEIVED"));
     }
 

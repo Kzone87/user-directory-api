@@ -29,24 +29,39 @@ class WorkOrderApiIntegrationTest {
     void listsSeedWorkOrdersAndFiltersByStatus() throws Exception {
         mockMvc.perform(get("/api/work-orders"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(4)));
+                .andExpect(jsonPath("$", hasSize(4)))
+                .andExpect(jsonPath("$[0].customerId").isNumber());
 
         mockMvc.perform(get("/api/work-orders").param("status", "IN_PROGRESS"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].customerName").value("에이스테크"));
+                .andExpect(jsonPath("$[0].customerId").value(2))
+                .andExpect(jsonPath("$[0].customerName").value("Beta Tech"));
     }
 
     @Test
-    void createsWorkOrderAsReceived() throws Exception {
+    void createsWorkOrderForExistingCustomer() throws Exception {
         mockMvc.perform(post("/api/work-orders")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"title":"신규 데이터 검수","customerName":"테스트상사","assignee":"Kim Developer"}
+                                {"title":"New data review","customerId":5,"assignee":"Kim Developer"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.matchesPattern("/api/work-orders/\\d+")))
+                .andExpect(jsonPath("$.customerId").value(5))
+                .andExpect(jsonPath("$.customerName").value("Echo Studio"))
                 .andExpect(jsonPath("$.status").value("RECEIVED"));
+    }
+
+    @Test
+    void rejectsWorkOrderForMissingCustomer() throws Exception {
+        mockMvc.perform(post("/api/work-orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Invalid customer order","customerId":9999,"assignee":"Kim Developer"}
+                                """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("CUSTOMER_NOT_FOUND"));
     }
 
     @Test

@@ -3,18 +3,25 @@ INSERT INTO users (name, email) VALUES
 ('Lee Engineer', 'lee@example.org'),
 ('Park Backend', 'park@example.com');
 
-INSERT INTO work_orders (title, customer_name, assignee, status) VALUES
-('신규 계정 등록 요청', '새한상사', 'Kim Developer', 'RECEIVED'),
-('월간 데이터 정리', '에이스테크', 'Lee Engineer', 'IN_PROGRESS'),
-('Excel export 검수', '미래유통', 'Park Backend', 'DONE'),
-('중복 고객 데이터 확인', '대한솔루션', 'Kim Developer', 'CANCELLED');
+INSERT INTO customers (company_name, contact_name, email, phone, status, memo) VALUES
+('Alpha Trading', 'Alex Kim', 'alpha@example.com', '010-1111-1111', 'ACTIVE', 'Fictional demo customer'),
+('Beta Tech', 'Blair Lee', 'beta@example.com', '010-2222-2222', 'ACTIVE', 'Fictional demo customer'),
+('Gamma Retail', 'Casey Park', 'gamma@example.com', '02-3333-3333', 'ACTIVE', 'Fictional demo customer'),
+('Delta Solutions', 'Drew Choi', 'delta@example.com', '031-444-4444', 'INACTIVE', 'Fictional demo customer'),
+('Echo Studio', 'Evan Jung', 'echo@example.com', '051-555-5555', 'LEAD', 'Fictional demo lead');
+
+INSERT INTO work_orders (title, customer_id, assignee, status) VALUES
+('Account setup request', 1, 'Kim Developer', 'RECEIVED'),
+('Monthly data cleanup', 2, 'Lee Engineer', 'IN_PROGRESS'),
+('Excel export review', 3, 'Park Backend', 'DONE'),
+('Duplicate data review', 4, 'Kim Developer', 'CANCELLED');
 
 INSERT INTO work_order_activities (work_order_id, actor, action, from_status, to_status, detail) VALUES
-(1, 'demo-admin', 'CREATED', NULL, 'RECEIVED', '업무가 접수되었습니다.'),
-(2, 'demo-admin', 'CREATED', NULL, 'RECEIVED', '업무가 접수되었습니다.'),
-(2, 'demo-staff', 'STATUS_CHANGED', 'RECEIVED', 'IN_PROGRESS', '업무 상태가 RECEIVED에서 IN_PROGRESS로 변경되었습니다.'),
-(3, 'demo-admin', 'CREATED', NULL, 'RECEIVED', '업무가 접수되었습니다.'),
-(3, 'demo-staff', 'STATUS_CHANGED', 'RECEIVED', 'IN_PROGRESS', '업무 상태가 RECEIVED에서 IN_PROGRESS로 변경되었습니다.'),
-(3, 'demo-admin', 'STATUS_CHANGED', 'IN_PROGRESS', 'DONE', '업무 상태가 IN_PROGRESS에서 DONE으로 변경되었습니다.'),
-(4, 'demo-admin', 'CREATED', NULL, 'RECEIVED', '업무가 접수되었습니다.'),
-(4, 'demo-admin', 'STATUS_CHANGED', 'RECEIVED', 'CANCELLED', '업무 상태가 RECEIVED에서 CANCELLED로 변경되었습니다.');
+(1, 'demo-admin', 'CREATED', NULL, 'RECEIVED', 'Work order was created.'),
+(2, 'demo-admin', 'CREATED', NULL, 'RECEIVED', 'Work order was created.'),
+(2, 'demo-staff', 'STATUS_CHANGED', 'RECEIVED', 'IN_PROGRESS', 'Status changed from RECEIVED to IN_PROGRESS.'),
+(3, 'demo-admin', 'CREATED', NULL, 'RECEIVED', 'Work order was created.'),
+(3, 'demo-staff', 'STATUS_CHANGED', 'RECEIVED', 'IN_PROGRESS', 'Status changed from RECEIVED to IN_PROGRESS.'),
+(3, 'demo-admin', 'STATUS_CHANGED', 'IN_PROGRESS', 'DONE', 'Status changed from IN_PROGRESS to DONE.'),
+(4, 'demo-admin', 'CREATED', NULL, 'RECEIVED', 'Work order was created.'),
+(4, 'demo-admin', 'STATUS_CHANGED', 'RECEIVED', 'CANCELLED', 'Status changed from RECEIVED to CANCELLED.');
