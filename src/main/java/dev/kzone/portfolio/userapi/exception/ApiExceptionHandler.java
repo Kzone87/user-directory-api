@@ -21,6 +21,12 @@ public class ApiExceptionHandler {
                 .body(new ApiError("USER_NOT_FOUND", exception.getMessage(), Instant.now(), Map.of()));
     }
 
+    @ExceptionHandler(CustomerNotFoundException.class)
+    public ResponseEntity<ApiError> handleCustomerNotFound(CustomerNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiError("CUSTOMER_NOT_FOUND", exception.getMessage(), Instant.now(), Map.of()));
+    }
+
     @ExceptionHandler(WorkOrderNotFoundException.class)
     public ResponseEntity<ApiError> handleWorkOrderNotFound(WorkOrderNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
