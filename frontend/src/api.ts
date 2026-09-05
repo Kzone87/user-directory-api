@@ -28,15 +28,34 @@ export type WorkOrderInput = {
   assignee: string;
 };
 
+export type AuthMe = {
+  username: string;
+  roles: string[];
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+let authorizationHeader: string | null = null;
+
+export function setBasicCredentials(username: string, password: string) {
+  authorizationHeader = `Basic ${btoa(`${username}:${password}`)}`;
+}
+
+export function clearCredentials() {
+  authorizationHeader = null;
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (authorizationHeader) headers.Authorization = authorizationHeader;
+
   const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...headers,
       ...options?.headers
-    },
-    ...options
+    }
   });
 
   if (!response.ok) {
@@ -55,6 +74,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+export function getCurrentUser(): Promise<AuthMe> {
+  return request<AuthMe>('/api/auth/me');
 }
 
 export function listUsers(keyword = ''): Promise<DirectoryUser[]> {
