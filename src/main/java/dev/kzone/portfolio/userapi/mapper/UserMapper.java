@@ -16,6 +16,20 @@ public interface UserMapper {
             @Param("emailDomain") String emailDomain
     );
 
+    List<User> searchPage(
+            @Param("keyword") String keyword,
+            @Param("emailDomain") String emailDomain,
+            @Param("sort") String sort,
+            @Param("direction") String direction,
+            @Param("size") int size,
+            @Param("offset") long offset
+    );
+
+    long countSearch(
+            @Param("keyword") String keyword,
+            @Param("emailDomain") String emailDomain
+    );
+
     int insert(User user);
 
     int update(User user);

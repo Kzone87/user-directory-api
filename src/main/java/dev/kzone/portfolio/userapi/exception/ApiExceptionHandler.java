@@ -29,6 +29,12 @@ public class ApiExceptionHandler {
                 .body(new ApiError("VALIDATION_ERROR", "Request validation failed", Instant.now(), fields));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleInvalidQuery(IllegalArgumentException exception) {
+        return ResponseEntity.badRequest()
+                .body(new ApiError("INVALID_QUERY", exception.getMessage(), Instant.now(), Map.of()));
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleConflict(DataIntegrityViolationException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

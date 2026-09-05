@@ -13,12 +13,13 @@
 
     <groupId>dev.kzone.portfolio</groupId>
     <artifactId>user-directory-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <name>User Directory API</name>
     <description>Portfolio REST API built with Spring Boot and MyBatis</description>
 
     <properties>
         <java.version>17</java.version>
+        <springdoc.version>2.6.0</springdoc.version>
     </properties>
 
     <dependencies>
@@ -34,6 +35,11 @@
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
             <version>3.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
@@ -54,6 +60,13 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <parameters>true</parameters>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

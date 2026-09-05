@@ -39,6 +39,31 @@ class UserApiIntegrationTest {
     }
 
     @Test
+    void returnsPaginatedAndSortedUsers() throws Exception {
+        mockMvc.perform(get("/api/users/page")
+                        .param("page", "0")
+                        .param("size", "2")
+                        .param("sort", "name")
+                        .param("direction", "desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].name").value("Park Backend"))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.sort").value("name"))
+                .andExpect(jsonPath("$.direction").value("desc"));
+    }
+
+    @Test
+    void rejectsInvalidPaginationQuery() throws Exception {
+        mockMvc.perform(get("/api/users/page").param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_QUERY"));
+    }
+
+    @Test
     void createsUser() throws Exception {
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -68,5 +93,13 @@ class UserApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("users.xlsx")));
+    }
+
+    @Test
+    void exposesOpenApiDocument() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title").value("User Directory API"))
+                .andExpect(jsonPath("$.paths['/api/users/page']").exists());
     }
 }

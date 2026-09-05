@@ -11,15 +11,7 @@
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
-    <select id="findById" resultMap="userResultMap">
-        SELECT id, name, email, created_at
-        FROM users
-        WHERE id = #{id}
-    </select>
-
-    <select id="search" resultMap="userResultMap">
-        SELECT id, name, email, created_at
-        FROM users
+    <sql id="searchFilters">
         <where>
             <if test="keyword != null">
                 AND (LOWER(name) LIKE CONCAT('%', #{keyword}, '%')
@@ -29,7 +21,47 @@
                 AND LOWER(email) LIKE CONCAT('%@', #{emailDomain})
             </if>
         </where>
+    </sql>
+
+    <sql id="safeOrderBy">
+        ORDER BY
+        <choose>
+            <when test="sort == 'name'">name</when>
+            <when test="sort == 'email'">email</when>
+            <when test="sort == 'createdAt'">created_at</when>
+            <otherwise>id</otherwise>
+        </choose>
+        <choose>
+            <when test="direction == 'desc'">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>
+    </sql>
+
+    <select id="findById" resultMap="userResultMap">
+        SELECT id, name, email, created_at
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+    <select id="search" resultMap="userResultMap">
+        SELECT id, name, email, created_at
+        FROM users
+        <include refid="searchFilters"/>
         ORDER BY id
+    </select>
+
+    <select id="searchPage" resultMap="userResultMap">
+        SELECT id, name, email, created_at
+        FROM users
+        <include refid="searchFilters"/>
+        <include refid="safeOrderBy"/>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countSearch" resultType="long">
+        SELECT COUNT(*)
+        FROM users
+        <include refid="searchFilters"/>
     </select>
 
     <insert id="insert" parameterType="dev.kzone.portfolio.userapi.domain.User"
