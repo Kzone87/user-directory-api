@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public record WorkOrderResponse(
         Long id,
         String title,
+        Long customerId,
         String customerName,
         String assignee,
         WorkOrderStatus status,
@@ -18,6 +19,7 @@ public record WorkOrderResponse(
         return new WorkOrderResponse(
                 workOrder.getId(),
                 workOrder.getTitle(),
+                workOrder.getCustomerId(),
                 workOrder.getCustomerName(),
                 workOrder.getAssignee(),
                 workOrder.getStatus(),
