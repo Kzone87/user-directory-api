@@ -2,7 +2,7 @@
 
 Spring Boot와 MyBatis를 사용해 사용자 검색, CRUD, Excel export를 제공하는 포트폴리오용 REST API입니다.
 
-> 이 저장소는 초기 Spring/MyBatis 학습 프로젝트를 폐기하지 않고, 당시 구현했던 사용자 조회·검색·Excel 출력 아이디어를 현대적인 Spring Boot 애플리케이션으로 재구성한 결과입니다. Repository 이름은 이력 유지를 위해 `springMybatis`를 유지합니다.
+> 초기 Spring/MyBatis 학습 프로젝트에서 출발했지만, 당시 구현했던 사용자 조회·검색·Excel 출력 아이디어를 현대적인 Spring Boot 애플리케이션으로 다시 설계해 포트폴리오용 API로 재구성했습니다.
 
 ## What changed
 
