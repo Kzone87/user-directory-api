@@ -1,12 +1,14 @@
 package dev.kzone.portfolio.userapi.controller;
 
 import dev.kzone.portfolio.userapi.domain.WorkOrderStatus;
+import dev.kzone.portfolio.userapi.dto.WorkOrderActivityResponse;
 import dev.kzone.portfolio.userapi.dto.WorkOrderCreateRequest;
 import dev.kzone.portfolio.userapi.dto.WorkOrderResponse;
 import dev.kzone.portfolio.userapi.dto.WorkOrderStatusUpdateRequest;
 import dev.kzone.portfolio.userapi.service.WorkOrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,17 +40,26 @@ public class WorkOrderController {
         return workOrderService.get(id);
     }
 
+    @GetMapping("/{id}/activities")
+    public List<WorkOrderActivityResponse> activities(@PathVariable long id) {
+        return workOrderService.activities(id);
+    }
+
     @PostMapping
-    public ResponseEntity<WorkOrderResponse> create(@Valid @RequestBody WorkOrderCreateRequest request) {
-        WorkOrderResponse created = workOrderService.create(request);
+    public ResponseEntity<WorkOrderResponse> create(
+            @Valid @RequestBody WorkOrderCreateRequest request,
+            Authentication authentication
+    ) {
+        WorkOrderResponse created = workOrderService.create(request, authentication.getName());
         return ResponseEntity.created(URI.create("/api/work-orders/" + created.id())).body(created);
     }
 
     @PatchMapping("/{id}/status")
     public WorkOrderResponse transition(
             @PathVariable long id,
-            @Valid @RequestBody WorkOrderStatusUpdateRequest request
+            @Valid @RequestBody WorkOrderStatusUpdateRequest request,
+            Authentication authentication
     ) {
-        return workOrderService.transition(id, request.status());
+        return workOrderService.transition(id, request.status(), authentication.getName());
     }
 }
