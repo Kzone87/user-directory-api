@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,11 +42,9 @@ class AnalyticsApiIntegrationTest {
     }
 
     @Test
-    void analyticsStillRequiresAuthentication() throws Exception {
-        mockMvc.perform(get("/api/analytics/operations").with(request -> {
-                    request.setUserPrincipal(null);
-                    return request;
-                }))
-                .andExpect(status().isOk());
+    @WithAnonymousUser
+    void analyticsRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/api/analytics/operations"))
+                .andExpect(status().isUnauthorized());
     }
 }
