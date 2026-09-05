@@ -10,6 +10,24 @@ export type UserInput = {
   email: string;
 };
 
+export type WorkOrderStatus = 'RECEIVED' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
+
+export type WorkOrder = {
+  id: number;
+  title: string;
+  customerName: string;
+  assignee: string;
+  status: WorkOrderStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WorkOrderInput = {
+  title: string;
+  customerName: string;
+  assignee: string;
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -60,4 +78,23 @@ export function updateUser(id: number, input: UserInput): Promise<DirectoryUser>
 
 export function deleteUser(id: number): Promise<void> {
   return request<void>(`/api/users/${id}`, { method: 'DELETE' });
+}
+
+export function listWorkOrders(status?: WorkOrderStatus): Promise<WorkOrder[]> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  return request<WorkOrder[]>(`/api/work-orders${query}`);
+}
+
+export function createWorkOrder(input: WorkOrderInput): Promise<WorkOrder> {
+  return request<WorkOrder>('/api/work-orders', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  });
+}
+
+export function updateWorkOrderStatus(id: number, status: WorkOrderStatus): Promise<WorkOrder> {
+  return request<WorkOrder>(`/api/work-orders/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status })
+  });
 }
