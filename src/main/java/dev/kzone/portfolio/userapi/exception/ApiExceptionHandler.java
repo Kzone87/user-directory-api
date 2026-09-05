@@ -3,9 +3,11 @@ package dev.kzone.portfolio.userapi.exception;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -41,16 +43,25 @@ public class ApiExceptionHandler {
                 .body(new ApiError("VALIDATION_ERROR", "Request validation failed", Instant.now(), fields));
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiError> handleInvalidQuery(IllegalArgumentException exception) {
+    @ExceptionHandler({
+            IllegalArgumentException.class,
+            MethodArgumentTypeMismatchException.class,
+            HttpMessageNotReadableException.class
+    })
+    public ResponseEntity<ApiError> handleInvalidRequest(Exception exception) {
         return ResponseEntity.badRequest()
-                .body(new ApiError("INVALID_QUERY", exception.getMessage(), Instant.now(), Map.of()));
+                .body(new ApiError("INVALID_QUERY", "Request contains an invalid value", Instant.now(), Map.of()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleConflict(DataIntegrityViolationException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ApiError("DATA_CONFLICT", "The email address is already in use", Instant.now(), Map.of()));
+                .body(new ApiError(
+                        "DATA_CONFLICT",
+                        "Data conflicts with an existing record or database constraint",
+                        Instant.now(),
+                        Map.of()
+                ));
     }
 
     public record ApiError(
