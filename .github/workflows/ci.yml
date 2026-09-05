@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [ main, "refactor/**", "portfolio-**" ]
+    branches: [ main, "refactor/**", "portfolio-**", "feature/**" ]
   pull_request:
     branches: [ main ]
 
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  verify:
+  verify-backend:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -20,5 +20,21 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - name: Verify
+      - name: Verify backend
         run: mvn -B verify
+
+  verify-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frontend dependencies
+        run: npm install
+      - name: Type-check and build frontend
+        run: npm run build
