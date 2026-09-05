@@ -1,6 +1,6 @@
 INSERT INTO users (name, email) VALUES
 ('Kim Developer', 'kim@example.com'),
-('Lee Engineer', 'lee@example.com'),
+('Lee Engineer', 'lee@example.org'),
 ('Park Backend', 'park@example.com');
 
 INSERT INTO customers (company_name, contact_name, email, phone, status, memo) VALUES
