@@ -21,6 +21,8 @@ public interface WorkOrderMapper {
                    c.company_name AS customer_name,
                    wo.assignee,
                    wo.status,
+                   wo.priority,
+                   wo.due_date,
                    wo.created_at,
                    wo.updated_at
             FROM work_orders wo
@@ -37,6 +39,8 @@ public interface WorkOrderMapper {
                    c.company_name AS customer_name,
                    wo.assignee,
                    wo.status,
+                   wo.priority,
+                   wo.due_date,
                    wo.created_at,
                    wo.updated_at
             FROM work_orders wo
@@ -44,14 +48,19 @@ public interface WorkOrderMapper {
             <where>
               <if test='status != null'>wo.status = #{status}</if>
             </where>
-            ORDER BY wo.updated_at DESC, wo.id DESC
+            ORDER BY
+              CASE wo.priority WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END,
+              CASE WHEN wo.due_date IS NULL THEN 1 ELSE 0 END,
+              wo.due_date ASC,
+              wo.updated_at DESC,
+              wo.id DESC
             </script>
             """)
     List<WorkOrder> findAll(@Param("status") WorkOrderStatus status);
 
     @Insert("""
-            INSERT INTO work_orders (title, customer_id, assignee, status)
-            VALUES (#{title}, #{customerId}, #{assignee}, #{status})
+            INSERT INTO work_orders (title, customer_id, assignee, status, priority, due_date)
+            VALUES (#{title}, #{customerId}, #{assignee}, #{status}, #{priority}, #{dueDate})
             """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(WorkOrder workOrder);

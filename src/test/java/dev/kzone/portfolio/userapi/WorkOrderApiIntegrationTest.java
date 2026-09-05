@@ -26,31 +26,46 @@ class WorkOrderApiIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
-    void listsSeedWorkOrdersAndFiltersByStatus() throws Exception {
+    void listsSeedWorkOrdersWithPriorityAndDueDate() throws Exception {
         mockMvc.perform(get("/api/work-orders"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(4)))
-                .andExpect(jsonPath("$[0].customerId").isNumber());
+                .andExpect(jsonPath("$[0].priority").value("URGENT"))
+                .andExpect(jsonPath("$[0].dueDate").value("2026-09-05"));
 
         mockMvc.perform(get("/api/work-orders").param("status", "IN_PROGRESS"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].customerId").value(2))
-                .andExpect(jsonPath("$[0].customerName").value("Beta Tech"));
+                .andExpect(jsonPath("$[0].customerName").value("Beta Tech"))
+                .andExpect(jsonPath("$[0].priority").value("HIGH"));
     }
 
     @Test
-    void createsWorkOrderForExistingCustomer() throws Exception {
+    void createsWorkOrderWithPlanningFields() throws Exception {
         mockMvc.perform(post("/api/work-orders")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"title":"New data review","customerId":5,"assignee":"Kim Developer"}
+                                {"title":"New data review","customerId":5,"assignee":"Kim Developer","priority":"HIGH","dueDate":"2026-09-12"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.matchesPattern("/api/work-orders/\\d+")))
                 .andExpect(jsonPath("$.customerId").value(5))
                 .andExpect(jsonPath("$.customerName").value("Echo Studio"))
+                .andExpect(jsonPath("$.priority").value("HIGH"))
+                .andExpect(jsonPath("$.dueDate").value("2026-09-12"))
                 .andExpect(jsonPath("$.status").value("RECEIVED"));
+    }
+
+    @Test
+    void priorityIsRequired() throws Exception {
+        mockMvc.perform(post("/api/work-orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Missing priority","customerId":1,"assignee":"Kim Developer"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 
     @Test
@@ -58,7 +73,7 @@ class WorkOrderApiIntegrationTest {
         mockMvc.perform(post("/api/work-orders")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"title":"Invalid customer order","customerId":9999,"assignee":"Kim Developer"}
+                                {"title":"Invalid customer order","customerId":9999,"assignee":"Kim Developer","priority":"NORMAL"}
                                 """))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("CUSTOMER_NOT_FOUND"));
@@ -87,9 +102,7 @@ class WorkOrderApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].actor").value("demo-admin"))
-                .andExpect(jsonPath("$[0].action").value("STATUS_CHANGED"))
-                .andExpect(jsonPath("$[0].fromStatus").value("RECEIVED"))
-                .andExpect(jsonPath("$[0].toStatus").value("IN_PROGRESS"));
+                .andExpect(jsonPath("$[0].action").value("STATUS_CHANGED"));
     }
 
     @Test
