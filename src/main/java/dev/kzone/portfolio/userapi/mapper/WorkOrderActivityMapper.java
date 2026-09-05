@@ -23,7 +23,8 @@ public interface WorkOrderActivityMapper {
             INSERT INTO work_order_activities (
                 work_order_id, actor, action, from_status, to_status, detail
             ) VALUES (
-                #{workOrderId}, #{actor}, #{action}, #{fromStatus}, #{toStatus}, #{detail}
+                #{workOrderId}, #{actor}, #{action},
+                #{fromStatus,jdbcType=VARCHAR}, #{toStatus,jdbcType=VARCHAR}, #{detail}
             )
             """)
     int insert(
