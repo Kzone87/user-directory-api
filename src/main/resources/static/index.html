@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="User Directory API browser management console">
+    <title>User Directory · Management Console</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/app.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">본문으로 건너뛰기</a>
+<header class="topbar">
+    <div>
+        <p class="eyebrow">SPRING BOOT · MYBATIS · OPENAPI</p>
+        <h1>User Directory</h1>
+        <p class="subtitle">REST API를 직접 사용하는 경량 관리 콘솔</p>
+    </div>
+    <nav aria-label="관련 링크">
+        <a href="/swagger-ui.html">Swagger UI</a>
+        <a href="/actuator/health">Health</a>
+        <a href="https://github.com/Kzone87/user-directory-api" target="_blank" rel="noreferrer">GitHub ↗</a>
+    </nav>
+</header>
+
+<main id="main" class="shell">
+    <section class="summary-grid" aria-label="서비스 요약">
+        <article>
+            <span>Service</span>
+            <strong id="healthState">checking…</strong>
+        </article>
+        <article>
+            <span>Total users</span>
+            <strong id="totalUsers">–</strong>
+        </article>
+        <article>
+            <span>Current page</span>
+            <strong id="currentPage">–</strong>
+        </article>
+        <article>
+            <span>Page size</span>
+            <strong id="currentSize">–</strong>
+        </article>
+    </section>
+
+    <div id="notice" class="notice" role="status" aria-live="polite">사용자 목록을 불러오는 중입니다.</div>
+
+    <div class="workspace">
+        <section class="directory-panel" aria-labelledby="directoryTitle">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">DIRECTORY</p>
+                    <h2 id="directoryTitle">사용자 조회</h2>
+                </div>
+                <a id="exportLink" class="button secondary" href="/api/users/export">Excel 내보내기</a>
+            </div>
+
+            <form id="searchForm" class="search-grid">
+                <label>
+                    <span>검색어</span>
+                    <input id="keywordInput" type="search" placeholder="이름 또는 이메일" autocomplete="off">
+                </label>
+                <label>
+                    <span>이메일 도메인</span>
+                    <input id="domainInput" type="text" placeholder="example.com" autocomplete="off">
+                </label>
+                <label>
+                    <span>정렬</span>
+                    <select id="sortInput">
+                        <option value="id">ID</option>
+                        <option value="name">이름</option>
+                        <option value="email">이메일</option>
+                        <option value="createdAt">생성일</option>
+                    </select>
+                </label>
+                <label>
+                    <span>방향</span>
+                    <select id="directionInput">
+                        <option value="asc">오름차순</option>
+                        <option value="desc">내림차순</option>
+                    </select>
+                </label>
+                <label>
+                    <span>페이지 크기</span>
+                    <select id="sizeInput">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </label>
+                <div class="search-actions">
+                    <button class="button primary" type="submit">조회</button>
+                    <button class="button ghost" id="resetSearchButton" type="button">초기화</button>
+                </div>
+            </form>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">이름</th>
+                        <th scope="col">이메일</th>
+                        <th scope="col">생성일</th>
+                        <th scope="col"><span class="sr-only">작업</span></th>
+                    </tr>
+                    </thead>
+                    <tbody id="userTableBody"></tbody>
+                </table>
+                <div id="emptyState" class="empty-state" hidden>
+                    <strong>조회 결과가 없습니다.</strong>
+                    <span>검색 조건을 바꾸거나 새 사용자를 등록하세요.</span>
+                </div>
+            </div>
+
+            <div class="pagination" aria-label="페이지 이동">
+                <button id="prevPageButton" type="button">← 이전</button>
+                <span id="pageLabel">1 / 1</span>
+                <button id="nextPageButton" type="button">다음 →</button>
+            </div>
+        </section>
+
+        <aside class="editor-panel" aria-labelledby="editorTitle">
+            <p class="eyebrow">WRITE PATH</p>
+            <h2 id="editorTitle">사용자 등록</h2>
+            <p class="editor-copy">등록과 수정은 같은 API 계약을 사용하며, validation 및 중복 이메일 오류를 화면에 그대로 전달합니다.</p>
+
+            <form id="userForm" novalidate>
+                <input id="editingId" type="hidden">
+                <label>
+                    <span>이름</span>
+                    <input id="nameInput" type="text" maxlength="100" required placeholder="Kim Developer">
+                    <small id="nameError" class="field-error"></small>
+                </label>
+                <label>
+                    <span>이메일</span>
+                    <input id="emailInput" type="email" maxlength="255" required placeholder="kim@example.com">
+                    <small id="emailError" class="field-error"></small>
+                </label>
+                <div class="editor-actions">
+                    <button id="saveButton" class="button primary" type="submit">등록</button>
+                    <button id="cancelEditButton" class="button ghost" type="button" hidden>수정 취소</button>
+                </div>
+            </form>
+
+            <div class="api-contract">
+                <strong>API contract</strong>
+                <code>POST /api/users</code>
+                <code>PUT /api/users/{id}</code>
+                <code>DELETE /api/users/{id}</code>
+                <a href="/swagger-ui.html">전체 API 명세 보기 →</a>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<footer>
+    <span>Portfolio application · H2 quick start / MySQL runtime profile / Testcontainers verification</span>
+</footer>
+</body>
+</html>
