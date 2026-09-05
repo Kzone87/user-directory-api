@@ -10,11 +10,35 @@ export type UserInput = {
   email: string;
 };
 
+export type CustomerStatus = 'LEAD' | 'ACTIVE' | 'INACTIVE';
+
+export type Customer = {
+  id: number;
+  companyName: string;
+  contactName: string | null;
+  email: string | null;
+  phone: string | null;
+  status: CustomerStatus;
+  memo: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CustomerInput = {
+  companyName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  status: CustomerStatus;
+  memo: string;
+};
+
 export type WorkOrderStatus = 'RECEIVED' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
 
 export type WorkOrder = {
   id: number;
   title: string;
+  customerId: number;
   customerName: string;
   assignee: string;
   status: WorkOrderStatus;
@@ -24,7 +48,7 @@ export type WorkOrder = {
 
 export type WorkOrderInput = {
   title: string;
-  customerName: string;
+  customerId: number;
   assignee: string;
 };
 
@@ -89,6 +113,28 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export function getCurrentUser(): Promise<AuthMe> {
   return request<AuthMe>('/api/auth/me');
+}
+
+export function listCustomers(keyword = '', status?: CustomerStatus): Promise<Customer[]> {
+  const params = new URLSearchParams();
+  if (keyword.trim()) params.set('keyword', keyword.trim());
+  if (status) params.set('status', status);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return request<Customer[]>(`/api/customers${query}`);
+}
+
+export function createCustomer(input: CustomerInput): Promise<Customer> {
+  return request<Customer>('/api/customers', {
+    method: 'POST',
+    body: JSON.stringify(input)
+  });
+}
+
+export function updateCustomer(id: number, input: CustomerInput): Promise<Customer> {
+  return request<Customer>(`/api/customers/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input)
+  });
 }
 
 export function listUsers(keyword = ''): Promise<DirectoryUser[]> {
