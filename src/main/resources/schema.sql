@@ -29,10 +29,13 @@ CREATE TABLE work_orders (
     customer_id BIGINT NOT NULL,
     assignee VARCHAR(100) NOT NULL,
     status VARCHAR(30) NOT NULL,
+    priority VARCHAR(20) NOT NULL,
+    due_date DATE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_work_order_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
-    CONSTRAINT chk_work_order_status CHECK (status IN ('RECEIVED', 'IN_PROGRESS', 'DONE', 'CANCELLED'))
+    CONSTRAINT chk_work_order_status CHECK (status IN ('RECEIVED', 'IN_PROGRESS', 'DONE', 'CANCELLED')),
+    CONSTRAINT chk_work_order_priority CHECK (priority IN ('LOW', 'NORMAL', 'HIGH', 'URGENT'))
 );
 
 CREATE TABLE work_order_activities (
@@ -52,6 +55,8 @@ CREATE INDEX idx_customers_status ON customers(status);
 CREATE INDEX idx_customers_company_name ON customers(company_name);
 CREATE INDEX idx_work_orders_customer ON work_orders(customer_id);
 CREATE INDEX idx_work_orders_status ON work_orders(status);
+CREATE INDEX idx_work_orders_priority ON work_orders(priority);
+CREATE INDEX idx_work_orders_due_date ON work_orders(due_date);
 CREATE INDEX idx_work_orders_updated_at ON work_orders(updated_at);
 CREATE INDEX idx_work_order_activities_order ON work_order_activities(work_order_id);
 CREATE INDEX idx_work_order_activities_created_at ON work_order_activities(created_at);
