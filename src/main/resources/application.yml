@@ -13,6 +13,11 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
+springdoc:
+  swagger-ui:
+    operations-sorter: method
+    tags-sorter: alpha
+
 server:
   error:
     include-message: never
