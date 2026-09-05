@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/user_directory?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USER:user_directory}
+    password: ${DB_PASSWORD:user_directory}
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-mysql.sql
+      data-locations: classpath:data.sql
