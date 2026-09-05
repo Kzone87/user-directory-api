@@ -1,6 +1,7 @@
 package dev.kzone.portfolio.userapi.controller;
 
 import dev.kzone.portfolio.userapi.dto.UserCreateRequest;
+import dev.kzone.portfolio.userapi.dto.UserPageResponse;
 import dev.kzone.portfolio.userapi.dto.UserResponse;
 import dev.kzone.portfolio.userapi.dto.UserUpdateRequest;
 import dev.kzone.portfolio.userapi.service.UserService;
@@ -34,6 +35,18 @@ public class UserController {
             @RequestParam(required = false) String emailDomain
     ) {
         return userService.search(keyword, emailDomain);
+    }
+
+    @GetMapping("/page")
+    public UserPageResponse searchPage(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String emailDomain,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "asc") String direction
+    ) {
+        return userService.searchPage(keyword, emailDomain, page, size, sort, direction);
     }
 
     @GetMapping("/{id}")
