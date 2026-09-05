@@ -14,9 +14,21 @@ import java.util.Map;
 @RestControllerAdvice
 public class ApiExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiError> handleNotFound(UserNotFoundException exception) {
+    public ResponseEntity<ApiError> handleUserNotFound(UserNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiError("USER_NOT_FOUND", exception.getMessage(), Instant.now(), Map.of()));
+    }
+
+    @ExceptionHandler(WorkOrderNotFoundException.class)
+    public ResponseEntity<ApiError> handleWorkOrderNotFound(WorkOrderNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiError("WORK_ORDER_NOT_FOUND", exception.getMessage(), Instant.now(), Map.of()));
+    }
+
+    @ExceptionHandler(WorkOrderTransitionException.class)
+    public ResponseEntity<ApiError> handleWorkOrderTransition(WorkOrderTransitionException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiError("INVALID_WORK_ORDER_TRANSITION", exception.getMessage(), Instant.now(), Map.of()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
