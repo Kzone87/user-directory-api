@@ -57,6 +57,8 @@ public class WorkOrderService {
                 customer.getCompanyName(),
                 request.assignee().trim(),
                 WorkOrderStatus.RECEIVED,
+                request.priority(),
+                request.dueDate(),
                 null,
                 null
         );
