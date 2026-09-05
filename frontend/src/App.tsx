@@ -8,12 +8,14 @@ import {
   DirectoryUser,
   getCurrentUser,
   listUsers,
+  listWorkOrderActivities,
   listWorkOrders,
   setBasicCredentials,
   updateUser,
   updateWorkOrderStatus,
   UserInput,
   WorkOrder,
+  WorkOrderActivity,
   WorkOrderInput,
   WorkOrderStatus
 } from './api';
@@ -33,6 +35,16 @@ function formatDate(value: string) {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
+  }).format(new Date(value));
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
   }).format(new Date(value));
 }
 
@@ -58,6 +70,9 @@ export default function App() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [users, setUsers] = useState<DirectoryUser[]>([]);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [activities, setActivities] = useState<WorkOrderActivity[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
+  const [activityLoading, setActivityLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<WorkOrderStatus | ''>('');
   const [userForm, setUserForm] = useState<UserInput>(emptyUserForm);
@@ -84,12 +99,28 @@ export default function App() {
     setWorkOrders(await listWorkOrders(filter || undefined));
   }
 
+  async function loadOrderActivities(order: WorkOrder) {
+    setSelectedOrder(order);
+    setActivityLoading(true);
+    setError('');
+    try {
+      setActivities(await listWorkOrderActivities(order.id));
+    } catch (e) {
+      setActivities([]);
+      setError(e instanceof Error ? e.message : '업무 이력을 불러오지 못했습니다.');
+    } finally {
+      setActivityLoading(false);
+    }
+  }
+
   async function loadInitialData() {
     setLoading(true);
     try {
       const [nextUsers, nextOrders] = await Promise.all([listUsers(''), listWorkOrders()]);
       setUsers(nextUsers);
       setWorkOrders(nextOrders);
+      setSelectedOrder(null);
+      setActivities([]);
     } finally {
       setLoading(false);
     }
@@ -132,6 +163,8 @@ export default function App() {
     setAuth(null);
     setUsers([]);
     setWorkOrders([]);
+    setActivities([]);
+    setSelectedOrder(null);
     setKeyword('');
     setStatusFilter('');
     setEditingId(null);
@@ -178,9 +211,10 @@ export default function App() {
     setWorkSaving(true);
     setError('');
     try {
-      await createWorkOrder(payload);
+      const created = await createWorkOrder(payload);
       setWorkForm(emptyWorkOrderForm);
       await loadOrders(statusFilter);
+      await loadOrderActivities(created);
     } catch (e) {
       setError(e instanceof Error ? e.message : '업무를 등록하지 못했습니다.');
     } finally {
@@ -214,8 +248,11 @@ export default function App() {
   async function transitionOrder(order: WorkOrder, next: WorkOrderStatus) {
     setError('');
     try {
-      await updateWorkOrderStatus(order.id, next);
+      const updated = await updateWorkOrderStatus(order.id, next);
       await loadOrders(statusFilter);
+      if (selectedOrder?.id === order.id) {
+        await loadOrderActivities(updated);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : '상태를 변경하지 못했습니다.');
     }
@@ -239,14 +276,14 @@ export default function App() {
       <main className="auth-screen">
         <section className="auth-card">
           <div className="auth-intro">
-            <p className="eyebrow">BUSINESS OPS DASHBOARD · V3</p>
-            <h1>역할에 따라 허용되는 업무가 다른 관리자 시스템</h1>
-            <p>Spring Security 기반의 공개 포트폴리오 데모입니다. ADMIN과 STAFF의 권한 차이를 직접 확인할 수 있습니다.</p>
+            <p className="eyebrow">BUSINESS OPS DASHBOARD · V4</p>
+            <h1>권한 제어와 변경 이력을 함께 보여주는 관리자 시스템</h1>
+            <p>Spring Security와 트랜잭션 기반 감사 로그를 결합한 공개 포트폴리오 데모입니다. ADMIN과 STAFF의 권한 차이뿐 아니라 누가 업무 상태를 변경했는지도 확인할 수 있습니다.</p>
             <div className="security-points">
               <span>Stateless HTTP Basic</span>
               <span>Role-based API authorization</span>
+              <span>Transactional audit history</span>
               <span>401 / 403 JSON contract</span>
-              <span>Credentials kept in memory only</span>
             </div>
           </div>
 
@@ -295,7 +332,7 @@ export default function App() {
           <a href="#delivery">Delivery scope</a>
         </nav>
         <div className="sidebar-note">
-          <strong>V3 · RBAC</strong>
+          <strong>V4 · AUDIT LOG</strong>
           <span>{auth.username} · {auth.roles.join(' / ')}</span>
         </div>
       </aside>
@@ -304,7 +341,7 @@ export default function App() {
         <header className="topbar">
           <div>
             <p className="eyebrow">FULL-STACK OPERATIONS PORTFOLIO</p>
-            <h2>고객 데이터와 업무 상태를 권한에 맞게 관리합니다.</h2>
+            <h2>고객 데이터와 업무 상태를 권한·이력과 함께 관리합니다.</h2>
           </div>
           <div className="user-menu">
             <span className="status-pill">{isAdmin ? 'ADMIN' : 'STAFF'}</span>
@@ -326,8 +363,8 @@ export default function App() {
           <div className="panel-heading work-order-heading">
             <div>
               <p className="eyebrow">WORK ORDER MODULE</p>
-              <h3>업무 접수 · 진행 · 완료 상태관리</h3>
-              <p className="muted">허용된 상태 전이만 서버에서 처리하며 오래된 상태의 동시 변경은 409로 보호합니다.</p>
+              <h3>업무 접수 · 진행 · 완료 · 변경 이력</h3>
+              <p className="muted">허용된 상태 전이만 서버에서 처리하고, 성공한 변경은 인증 사용자와 함께 감사 로그로 기록합니다.</p>
             </div>
             <select value={statusFilter} onChange={(event) => void applyStatusFilter(event.target.value as WorkOrderStatus | '')} aria-label="업무 상태 필터">
               <option value="">전체 상태</option>
@@ -341,14 +378,15 @@ export default function App() {
           <div className="work-order-layout">
             <div className="table-wrap">
               <table>
-                <thead><tr><th>업무</th><th>고객</th><th>담당자</th><th>상태</th><th>변경</th></tr></thead>
+                <thead><tr><th>업무</th><th>고객</th><th>담당자</th><th>상태</th><th>관리</th></tr></thead>
                 <tbody>
                   {loading ? <tr><td colSpan={5} className="empty-state">불러오는 중...</td></tr> : workOrders.length === 0 ? <tr><td colSpan={5} className="empty-state">조건에 맞는 업무가 없습니다.</td></tr> : workOrders.map((order) => (
-                    <tr key={order.id}>
+                    <tr key={order.id} className={selectedOrder?.id === order.id ? 'selected-row' : ''}>
                       <td><strong>{order.title}</strong><small className="cell-note">{formatDate(order.updatedAt)} 갱신</small></td>
                       <td>{order.customerName}</td><td>{order.assignee}</td>
                       <td><span className={`work-status status-${order.status.toLowerCase()}`}>{statusLabels[order.status]}</span></td>
                       <td className="actions work-actions">
+                        <button className="text-button history-button" onClick={() => void loadOrderActivities(order)}>이력</button>
                         {nextActions(order.status).map((action) => <button key={action.status} className={action.status === 'CANCELLED' ? 'text-button danger' : 'text-button'} onClick={() => void transitionOrder(order, action.status)}>{action.label}</button>)}
                         {nextActions(order.status).length === 0 && <span className="terminal-state">종료</span>}
                       </td>
@@ -368,6 +406,54 @@ export default function App() {
               </form>
             </aside>
           </div>
+
+          <section className="activity-log" aria-live="polite">
+            {selectedOrder ? (
+              <>
+                <div className="activity-heading">
+                  <div>
+                    <p className="eyebrow">ACTIVITY HISTORY</p>
+                    <h3>{selectedOrder.title}</h3>
+                    <p className="muted">업무 #{selectedOrder.id} · {selectedOrder.customerName} · 현재 {statusLabels[selectedOrder.status]}</p>
+                  </div>
+                  <button type="button" className="secondary-button compact-button" onClick={() => { setSelectedOrder(null); setActivities([]); }}>이력 닫기</button>
+                </div>
+
+                {activityLoading ? <p className="activity-empty">이력을 불러오는 중...</p> : activities.length === 0 ? <p className="activity-empty">기록된 변경 이력이 없습니다.</p> : (
+                  <div className="activity-list">
+                    {activities.map((activity) => (
+                      <article className="activity-item" key={activity.id}>
+                        <span className="activity-marker" aria-hidden="true" />
+                        <div className="activity-content">
+                          <div className="activity-meta">
+                            <strong>{activity.actor}</strong>
+                            <span>{formatDateTime(activity.createdAt)}</span>
+                          </div>
+                          <h4>{activity.action === 'CREATED' ? '업무 접수' : '상태 변경'}</h4>
+                          <p>{activity.detail}</p>
+                          {activity.toStatus && (
+                            <div className="activity-transition">
+                              {activity.fromStatus && <span className={`work-status status-${activity.fromStatus.toLowerCase()}`}>{statusLabels[activity.fromStatus]}</span>}
+                              {activity.fromStatus && <span className="transition-arrow">→</span>}
+                              <span className={`work-status status-${activity.toStatus.toLowerCase()}`}>{statusLabels[activity.toStatus]}</span>
+                            </div>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="activity-placeholder">
+                <div>
+                  <p className="eyebrow">ACTIVITY HISTORY</p>
+                  <h3>업무 변경 이력 조회</h3>
+                </div>
+                <p>업무 목록의 <strong>이력</strong> 버튼을 누르면 접수자와 상태 변경 주체를 시간순으로 확인할 수 있습니다.</p>
+              </div>
+            )}
+          </section>
         </section>
 
         <section id="directory" className="workspace-grid directory-section">
@@ -416,7 +502,8 @@ export default function App() {
           <ul>
             <li>React/TypeScript 관리자 화면</li><li>Spring Boot + MyBatis REST API</li>
             <li>Spring Security ADMIN/STAFF RBAC</li><li>401 / 403 인증·권한 오류 계약</li>
-            <li>업무 접수와 서버 상태 머신</li><li>조건부 UPDATE를 이용한 동시 변경 방어</li>
+            <li>업무 접수와 서버 상태 머신</li><li>트랜잭션 기반 감사 로그 / 변경 추적</li>
+            <li>조건부 UPDATE 동시 변경 방어</li><li>업무별 Activity timeline UI</li>
           </ul>
         </section>
       </main>

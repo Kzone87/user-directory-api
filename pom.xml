@@ -13,9 +13,9 @@
 
     <groupId>dev.kzone.portfolio</groupId>
     <artifactId>user-directory-api</artifactId>
-    <version>3.0.0</version>
+    <version>4.0.0</version>
     <name>Business Ops Dashboard</name>
-    <description>Full-stack operations portfolio with Spring Boot, MyBatis, state transitions and role-based access</description>
+    <description>Full-stack operations portfolio with Spring Boot, MyBatis, RBAC, state transitions and transactional audit history</description>
 
     <properties>
         <java.version>17</java.version>
