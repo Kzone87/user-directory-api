@@ -1,27 +1,29 @@
-# User Directory API
+# User Directory
 
 ![CI](https://github.com/Kzone87/user-directory-api/actions/workflows/ci.yml/badge.svg)
 
-Spring Boot와 MyBatis를 사용해 사용자 검색, CRUD, pagination/sort, Excel export를 제공하는 포트폴리오용 REST API입니다.
+Spring Boot + MyBatis 기반 사용자 관리 애플리케이션입니다. REST API, Swagger 문서, 브라우저 관리 UI, Excel export, H2 quick-start, MySQL runtime profile, Testcontainers 검증과 Docker 실행 구성을 한 저장소에서 제공합니다.
 
-> 초기 Spring/MyBatis 학습 프로젝트에서 출발했지만, 당시 구현했던 사용자 조회·검색·Excel 출력 아이디어를 현대적인 Spring Boot 애플리케이션으로 다시 설계해 실행·검증 가능한 API로 재구성했습니다.
+> 초기 Spring/MyBatis 학습 프로젝트의 사용자 조회·검색·Excel 출력 아이디어를 현대적인 Spring Boot 애플리케이션으로 다시 설계했습니다. 단순 CRUD 예제를 넘어서 입력 계약, 오류 계약, pagination/sort, 실제 MySQL 호환성, 운영 상태 확인과 UI 사용 흐름까지 검증하는 것이 목표입니다.
 
-## What changed
+## Product surface
 
-초기 버전은 Spring XML 설정, 혼재된 패키지명, IDE 산출물, 불완전한 Mapper namespace와 샘플 계정 설정이 섞인 학습 코드였습니다. 현재 버전은 다음 원칙으로 다시 설계했습니다.
+애플리케이션 실행 후 바로 사용할 수 있는 화면과 엔드포인트입니다.
 
-- Spring Boot 기반 자동 설정
-- Controller → Service → Mapper 계층 분리
-- Request/Response DTO 분리
-- Bean Validation
-- 전역 예외 처리와 일관된 오류 코드
-- MyBatis XML 동적 검색
-- pagination / sort의 서버 검증 및 SQL whitelist
-- H2 인메모리 DB로 즉시 실행 가능
-- Apache POI Excel export
-- OpenAPI 3 / Swagger UI
-- MockMvc 통합 테스트
-- GitHub Actions Maven verification CI
+- Management Console: `http://localhost:8080/`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+- Health: `http://localhost:8080/actuator/health`
+
+브라우저 관리 화면에서는 다음 작업을 수행할 수 있습니다.
+
+- 이름/이메일 keyword 검색
+- email domain 필터
+- pagination / sort / page size 변경
+- 사용자 등록, 수정, 삭제
+- 조건에 맞는 Excel export
+- API/health 문서로 직접 이동
+- API validation / conflict 오류를 필드와 상태 메시지로 표시
 
 ## API
 
@@ -35,19 +37,13 @@ Spring Boot와 MyBatis를 사용해 사용자 검색, CRUD, pagination/sort, Exc
 | DELETE | `/api/users/{id}` | 사용자 삭제 |
 | GET | `/api/users/export` | 현재 검색 조건의 결과를 XLSX로 다운로드 |
 
-### Search example
+### Paginated search
 
 ```http
-GET /api/users?keyword=kim&emailDomain=example.com
+GET /api/users/page?page=0&size=20&sort=name&direction=asc&keyword=kim
 ```
 
-### Paginated search example
-
-```http
-GET /api/users/page?page=0&size=20&sort=name&direction=asc
-```
-
-허용 sort 값은 `id`, `name`, `email`, `createdAt`이며 `size`는 1~100 범위로 제한합니다. 잘못된 query는 `400 INVALID_QUERY`로 정규화합니다.
+허용 sort 값은 `id`, `name`, `email`, `createdAt`이며 `size`는 1~100 범위입니다. 정렬 컬럼은 사용자 입력을 SQL에 직접 삽입하지 않고 Service whitelist와 MyBatis `<choose>`로 제한합니다.
 
 응답 예시:
 
@@ -63,45 +59,40 @@ GET /api/users/page?page=0&size=20&sort=name&direction=asc
 }
 ```
 
-### Create example
+오류 계약:
 
-```json
-{
-  "name": "Kim Developer",
-  "email": "kim@example.com"
-}
-```
-
-## OpenAPI / Swagger UI
-
-애플리케이션 실행 후 다음 경로에서 API 계약을 바로 확인할 수 있습니다.
-
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
-
-Spring Boot 3.3.x와 호환되는 springdoc-openapi 2.6.x 계열을 사용합니다.
+- 잘못된 request body → `400 VALIDATION_ERROR`
+- 잘못된 pagination/sort query → `400 INVALID_QUERY`
+- 존재하지 않는 사용자 → `404 USER_NOT_FOUND`
+- 중복 이메일 → `409 DATA_CONFLICT`
 
 ## Architecture
 
 ```text
-HTTP
-  ↓
+Browser Management Console
+          │
+          ├──────────────┐
+          ▼              ▼
+     REST API        Swagger / Health
+          │
+          ▼
 UserController / UserExcelController
-  ↓
+          │
+          ▼
 UserService / UserExcelService
-  ↓
-UserMapper
-  ↓
-MyBatis XML
-  ↓
-H2 (MySQL compatibility mode)
+          │
+          ▼
+      UserMapper
+          │
+          ▼
+     MyBatis XML
+          │
+     ┌────┴────┐
+     ▼         ▼
+H2 quick start   MySQL runtime / Testcontainers
 ```
 
-API 입력 모델과 DB 도메인을 분리하고, 조회되지 않는 사용자는 `404`, 이메일 중복은 `409`, validation 및 잘못된 query는 `400`으로 정규화합니다.
-
-Pagination의 정렬 컬럼은 요청 문자열을 SQL에 직접 삽입하지 않고, 서비스 whitelist와 MyBatis `<choose>`로 허용된 컬럼만 선택합니다.
-
-## Run locally
+## Quick start — H2
 
 Requirements: Java 17+, Maven 3.9+
 
@@ -109,7 +100,25 @@ Requirements: Java 17+, Maven 3.9+
 mvn spring-boot:run
 ```
 
-기본 DB는 `jdbc:h2:mem:userdb`이며 실행 시 `schema.sql`, `data.sql`로 초기화됩니다.
+기본 프로필은 `jdbc:h2:mem:userdb`를 사용하며 `schema.sql`, `data.sql`로 초기화됩니다. 외부 DB 없이 관리 UI와 Swagger를 바로 확인할 수 있습니다.
+
+## Full runtime — MySQL + Docker Compose
+
+Docker가 있다면 애플리케이션과 MySQL을 함께 실행할 수 있습니다.
+
+```bash
+docker compose up --build
+```
+
+구성:
+
+- `mysql:8.4`
+- Spring Boot application container
+- MySQL healthcheck 이후 애플리케이션 시작
+- `/actuator/health` 애플리케이션 healthcheck
+- `application-mysql.yml`에서 DB 연결을 환경변수로 분리
+
+실서비스에서는 `DB_URL`, `DB_USER`, `DB_PASSWORD`를 배포 환경의 secret/configuration으로 주입해야 합니다. `compose.yml`의 값은 로컬 포트폴리오 실행용입니다.
 
 ## Test and verification
 
@@ -117,50 +126,60 @@ mvn spring-boot:run
 mvn verify
 ```
 
-MockMvc 통합 테스트에서 다음을 검증합니다.
+테스트 범위:
 
-- 사용자 조회 및 검색
-- 생성 및 Bean Validation
+- Management Console 정적 화면 제공
+- health endpoint
+- 사용자 조회/검색
+- 등록/수정/삭제
+- Bean Validation
+- 중복 이메일 `409`
 - pagination / sort / metadata
-- 잘못된 pagination query의 오류 계약
+- 잘못된 query `400`
 - Excel XLSX export
 - OpenAPI 문서 생성
+- Testcontainers 기반 실제 MySQL query compatibility
 
-동일한 `mvn verify`를 GitHub Actions에서도 수행합니다.
+GitHub Actions는 두 개의 품질 게이트를 수행합니다.
+
+1. `mvn verify` — H2 + MockMvc + Testcontainers MySQL
+2. `docker build` — 실행 이미지가 실제로 생성되는지 검증
 
 ## Tech stack
 
 - Java 17
 - Spring Boot 3.3.4
-- Spring MVC / Bean Validation
+- Spring MVC / Bean Validation / Actuator
 - MyBatis 3
-- H2 (MySQL compatibility mode)
+- H2 + MySQL 8.4
+- Testcontainers
 - springdoc-openapi 2.6
 - Apache POI
+- Vanilla JavaScript management UI
 - JUnit 5 / MockMvc
+- Docker / Docker Compose
 - GitHub Actions
 
 ## Engineering decisions
 
-### Why MyBatis
+### Browser UI without a separate frontend build
 
-기존 학습 프로젝트에서 SQL Mapper를 직접 다룬 경험을 유지하면서, SQL과 Java 계층의 책임을 명확히 보여주기 위해 MyBatis를 사용했습니다. Pagination 정렬도 동적 문자열 치환 대신 whitelist 기반 분기를 사용합니다.
+이 프로젝트의 핵심은 backend 계약과 데이터 흐름이므로 별도 React 프로젝트를 추가하지 않았습니다. `src/main/resources/static`의 작은 관리 UI가 실제 REST API를 직접 호출하도록 구성해 API 동작을 눈으로 검증하면서도 backend 중심 프로젝트라는 성격을 유지합니다.
 
-### Why H2
+### H2 + real MySQL verification
 
-포트폴리오 검토자가 외부 DB를 설치하지 않고 바로 실행할 수 있도록 기본 프로필은 H2를 사용합니다. MySQL compatibility mode로 Mapper SQL의 실행 가능성을 유지합니다. 실제 서비스라면 datasource 설정을 환경변수 기반 PostgreSQL/MySQL로 분리할 수 있습니다.
+H2는 검토자가 설치 없이 즉시 실행하기 위한 기본 경로입니다. 반면 SQL 호환성을 H2 compatibility mode에만 의존하지 않도록 Testcontainers에서 실제 MySQL 8.4를 실행해 pagination과 동적 정렬 query를 검증합니다.
 
-### Why keep both list and paginated search
+### Safe sorting
 
-기존의 단순 검색 API는 작은 데이터셋이나 내부 연동에서 사용하기 쉽도록 유지하고, `/page` 엔드포인트에서 페이지 메타데이터와 정렬 계약을 명시적으로 제공합니다. 기존 API를 깨지 않고 실서비스형 조회 경로를 추가한 선택입니다.
+`sort=name` 같은 입력을 `${sort}`로 SQL에 그대로 삽입하지 않습니다. Service에서 허용된 정렬 키만 받고 MyBatis `<choose>`가 실제 DB column을 선택합니다.
 
-### Why Excel export is a separate service
+### Explicit error contract
 
-HTTP 응답 처리와 문서 생성 책임을 분리해 Controller가 비대해지지 않도록 했습니다. Excel 생성 로직은 독립적으로 테스트하거나 다른 전달 채널에서 재사용할 수 있습니다.
+HTTP status만 반환하지 않고 `code`, `message`, `timestamp`, `fieldErrors` 형식으로 클라이언트가 처리 가능한 오류 계약을 유지합니다. 관리 UI 역시 이 계약을 그대로 사용합니다.
 
-## Future improvements
+## Portfolio focus
 
-- Testcontainers 기반 실제 MySQL/PostgreSQL 통합 테스트
-- optimistic locking
-- 인증/권한이 필요한 별도 서비스와 연동
-- API versioning 전략
+이 프로젝트가 보여주려는 것은 CRUD 기능 개수보다 다음의 연결입니다.
+
+> Browser UI → REST contract → validation/error handling → service boundary → MyBatis SQL → H2/MySQL → Excel → OpenAPI → automated verification → container runtime
