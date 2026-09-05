@@ -28,6 +28,17 @@ export type WorkOrderInput = {
   assignee: string;
 };
 
+export type WorkOrderActivity = {
+  id: number;
+  workOrderId: number;
+  actor: string;
+  action: 'CREATED' | 'STATUS_CHANGED';
+  fromStatus: WorkOrderStatus | null;
+  toStatus: WorkOrderStatus | null;
+  detail: string;
+  createdAt: string;
+};
+
 export type AuthMe = {
   username: string;
   roles: string[];
@@ -106,6 +117,10 @@ export function deleteUser(id: number): Promise<void> {
 export function listWorkOrders(status?: WorkOrderStatus): Promise<WorkOrder[]> {
   const query = status ? `?status=${encodeURIComponent(status)}` : '';
   return request<WorkOrder[]>(`/api/work-orders${query}`);
+}
+
+export function listWorkOrderActivities(id: number): Promise<WorkOrderActivity[]> {
+  return request<WorkOrderActivity[]>(`/api/work-orders/${id}/activities`);
 }
 
 export function createWorkOrder(input: WorkOrderInput): Promise<WorkOrder> {
