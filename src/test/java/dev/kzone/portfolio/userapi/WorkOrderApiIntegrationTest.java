@@ -50,12 +50,31 @@ class WorkOrderApiIntegrationTest {
     }
 
     @Test
-    void acceptsAllowedStatusTransition() throws Exception {
+    void listsSeedActivityHistoryNewestFirst() throws Exception {
+        mockMvc.perform(get("/api/work-orders/3/activities"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(3)))
+                .andExpect(jsonPath("$[0].actor").value("demo-admin"))
+                .andExpect(jsonPath("$[0].action").value("STATUS_CHANGED"))
+                .andExpect(jsonPath("$[0].fromStatus").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$[0].toStatus").value("DONE"));
+    }
+
+    @Test
+    void acceptsAllowedStatusTransitionAndRecordsActor() throws Exception {
         mockMvc.perform(patch("/api/work-orders/1/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":\"IN_PROGRESS\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+
+        mockMvc.perform(get("/api/work-orders/1/activities"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].actor").value("demo-admin"))
+                .andExpect(jsonPath("$[0].action").value("STATUS_CHANGED"))
+                .andExpect(jsonPath("$[0].fromStatus").value("RECEIVED"))
+                .andExpect(jsonPath("$[0].toStatus").value("IN_PROGRESS"));
     }
 
     @Test
