@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react';
 import {
+  announceDataChange,
   AuthMe,
   clearCredentials,
   createCustomer,
@@ -23,6 +24,7 @@ import {
   WorkOrder,
   WorkOrderActivity,
   WorkOrderInput,
+  WorkOrderPriority,
   WorkOrderStatus
 } from './api';
 
@@ -35,13 +37,28 @@ const emptyCustomerForm: CustomerInput = {
   status: 'LEAD',
   memo: ''
 };
-const emptyWorkOrderForm: WorkOrderInput = { title: '', customerId: 0, assignee: '' };
+const emptyWorkOrderForm: WorkOrderInput = {
+  title: '',
+  customerId: 0,
+  assignee: '',
+  priority: 'NORMAL',
+  dueDate: null
+};
 
 const statusLabels: Record<WorkOrderStatus, string> = {
   RECEIVED: '접수',
   IN_PROGRESS: '진행',
+  WAITING_APPROVAL: '승인 대기',
+  APPROVED: '승인 완료',
   DONE: '완료',
   CANCELLED: '취소'
+};
+
+const priorityLabels: Record<WorkOrderPriority, string> = {
+  LOW: '낮음',
+  NORMAL: '보통',
+  HIGH: '높음',
+  URGENT: '긴급'
 };
 
 const customerStatusLabels: Record<CustomerStatus, string> = {
@@ -76,12 +93,19 @@ function nextActions(status: WorkOrderStatus): Array<{ label: string; status: Wo
     ];
   }
   if (status === 'IN_PROGRESS') {
+    return [{ label: '취소', status: 'CANCELLED' }];
+  }
+  if (status === 'APPROVED') {
     return [
       { label: '완료', status: 'DONE' },
       { label: '취소', status: 'CANCELLED' }
     ];
   }
   return [];
+}
+
+function isTerminal(status: WorkOrderStatus) {
+  return status === 'DONE' || status === 'CANCELLED';
 }
 
 export default function App() {
@@ -120,7 +144,8 @@ export default function App() {
     customers: customers.length,
     activeCustomers: customers.filter((item) => item.status === 'ACTIVE').length,
     received: workOrders.filter((item) => item.status === 'RECEIVED').length,
-    inProgress: workOrders.filter((item) => item.status === 'IN_PROGRESS').length
+    inProgress: workOrders.filter((item) => item.status === 'IN_PROGRESS').length,
+    waitingApproval: workOrders.filter((item) => item.status === 'WAITING_APPROVAL').length
   }), [customers, workOrders]);
 
   const visibleOrders = useMemo(
@@ -256,6 +281,7 @@ export default function App() {
       setCustomerForm(emptyCustomerForm);
       setEditingCustomerId(null);
       await loadCustomers(customerKeyword, customerStatusFilter);
+      announceDataChange();
     } catch (e) {
       setError(e instanceof Error ? e.message : '고객 정보를 저장하지 못했습니다.');
     } finally {
@@ -298,7 +324,9 @@ export default function App() {
     const payload: WorkOrderInput = {
       title: workForm.title.trim(),
       customerId: workForm.customerId,
-      assignee: workForm.assignee.trim()
+      assignee: workForm.assignee.trim(),
+      priority: workForm.priority ?? 'NORMAL',
+      dueDate: workForm.dueDate || null
     };
     if (!payload.title || payload.customerId <= 0 || !payload.assignee) {
       setError('업무명, 고객, 담당자를 모두 입력해 주세요.');
@@ -312,6 +340,7 @@ export default function App() {
       setWorkForm(emptyWorkOrderForm);
       await loadOrders(statusFilter);
       await loadOrderActivities(created);
+      announceDataChange();
     } catch (e) {
       setError(e instanceof Error ? e.message : '업무를 등록하지 못했습니다.');
     } finally {
@@ -325,6 +354,7 @@ export default function App() {
       const updated = await updateWorkOrderStatus(order.id, next);
       await loadOrders(statusFilter);
       if (selectedOrder?.id === order.id) await loadOrderActivities(updated);
+      announceDataChange();
     } catch (e) {
       setError(e instanceof Error ? e.message : '상태를 변경하지 못했습니다.');
     }
@@ -394,14 +424,15 @@ export default function App() {
       <main className="auth-screen">
         <section className="auth-card">
           <div className="auth-intro">
-            <p className="eyebrow">BUSINESS OPS DASHBOARD · V5</p>
-            <h1>고객과 업무를 관계형 데이터로 연결한 운영관리 시스템</h1>
-            <p>고객 CRM, 업무 상태 머신, 역할 권한, 변경 이력을 하나의 공개 포트폴리오 데모로 구성했습니다.</p>
+            <p className="eyebrow">BUSINESS OPS DASHBOARD · V8</p>
+            <h1>고객·업무·승인·리포트를 하나의 운영 흐름으로 연결합니다.</h1>
+            <p>CRM, 업무 계획, 상태 머신, 역할 권한, 승인 이력, 서버 집계 Analytics와 CSV/XLSX 리포트를 결합한 공개 포트폴리오 데모입니다.</p>
             <div className="security-points">
               <span>Customer domain + relational FK</span>
+              <span>Approval-gated work order lifecycle</span>
               <span>Role-based API authorization</span>
-              <span>Transactional audit history</span>
-              <span>Spring validation + 401/403/404/409</span>
+              <span>Transactional audit + approval history</span>
+              <span>Server analytics + safe CSV/XLSX export</span>
             </div>
           </div>
 
@@ -410,10 +441,10 @@ export default function App() {
             <h2>역할 선택 후 로그인</h2>
             <div className="account-grid">
               <button type="button" onClick={() => useDemoAccount('ADMIN')}>
-                <strong>ADMIN</strong><span>디렉터리 삭제 포함 전체 기능</span>
+                <strong>ADMIN</strong><span>승인·반려, 리포트, 디렉터리 삭제 포함</span>
               </button>
               <button type="button" onClick={() => useDemoAccount('STAFF')}>
-                <strong>STAFF</strong><span>고객·업무 조회/등록/수정</span>
+                <strong>STAFF</strong><span>고객·업무 운영 및 승인 요청</span>
               </button>
             </div>
             <form className="editor-form auth-form" onSubmit={login}>
@@ -435,7 +466,7 @@ export default function App() {
         <div>
           <p className="brand-mark">KZ</p>
           <h1>Business Ops</h1>
-          <p className="sidebar-copy">고객·업무관리 풀스택 데모</p>
+          <p className="sidebar-copy">고객·업무·승인 운영관리 데모</p>
         </div>
         <nav>
           <a className="active" href="#dashboard">Dashboard</a>
@@ -445,7 +476,7 @@ export default function App() {
           <a href="#delivery">Delivery scope</a>
         </nav>
         <div className="sidebar-note">
-          <strong>V5 · CUSTOMER DOMAIN</strong>
+          <strong>V8 · APPROVAL & REPORTING</strong>
           <span>{auth.username} · {auth.roles.join(' / ')}</span>
         </div>
       </aside>
@@ -454,7 +485,7 @@ export default function App() {
         <header className="topbar">
           <div>
             <p className="eyebrow">FULL-STACK OPERATIONS PORTFOLIO</p>
-            <h2>고객과 업무를 연결하고 모든 상태 변경을 추적합니다.</h2>
+            <h2>업무를 계획하고 승인한 뒤 완료하며, 전 과정을 추적합니다.</h2>
           </div>
           <div className="user-menu">
             <span className="status-pill">{isAdmin ? 'ADMIN' : 'STAFF'}</span>
@@ -470,6 +501,7 @@ export default function App() {
           <article><span>활성 고객</span><strong>{metrics.activeCustomers}</strong><small>ACTIVE 상태</small></article>
           <article><span>신규 접수</span><strong>{metrics.received}</strong><small>처리 대기 업무</small></article>
           <article><span>진행 중</span><strong>{metrics.inProgress}</strong><small>담당자 처리 중</small></article>
+          <article><span>승인 대기</span><strong>{metrics.waitingApproval}</strong><small>ADMIN 결정 대기</small></article>
         </section>
 
         <section id="customers" className="workspace-grid customer-section">
@@ -525,12 +557,18 @@ export default function App() {
         <section id="work-orders" className="panel work-order-panel">
           <div className="panel-heading work-order-heading">
             <div>
-              <p className="eyebrow">WORK ORDER MODULE</p>
-              <h3>업무 접수 · 진행 · 완료 · 변경 이력</h3>
-              <p className="muted">업무는 고객 FK로 연결되고, 허용된 상태 전이와 인증 사용자 이력이 서버에서 함께 관리됩니다.</p>
+              <p className="eyebrow">WORK ORDER MODULE · APPROVAL GATED</p>
+              <h3>접수 → 진행 → 승인 요청 → 승인 → 완료</h3>
+              <p className="muted">IN_PROGRESS 업무는 직접 완료할 수 없으며 승인 절차를 거쳐야 합니다. 모든 상태 변경과 승인 결정은 서버 이력에 남습니다.</p>
             </div>
             <select value={statusFilter} onChange={(event) => void applyStatusFilter(event.target.value as WorkOrderStatus | '')} aria-label="업무 상태 필터">
-              <option value="">전체 상태</option><option value="RECEIVED">접수</option><option value="IN_PROGRESS">진행</option><option value="DONE">완료</option><option value="CANCELLED">취소</option>
+              <option value="">전체 상태</option>
+              <option value="RECEIVED">접수</option>
+              <option value="IN_PROGRESS">진행</option>
+              <option value="WAITING_APPROVAL">승인 대기</option>
+              <option value="APPROVED">승인 완료</option>
+              <option value="DONE">완료</option>
+              <option value="CANCELLED">취소</option>
             </select>
           </div>
 
@@ -539,18 +577,21 @@ export default function App() {
           <div className="work-order-layout">
             <div className="table-wrap">
               <table>
-                <thead><tr><th>업무</th><th>고객</th><th>담당자</th><th>상태</th><th>관리</th></tr></thead>
+                <thead><tr><th>업무</th><th>고객</th><th>담당자</th><th>계획</th><th>상태</th><th>관리</th></tr></thead>
                 <tbody>
-                  {loading ? <tr><td colSpan={5} className="empty-state">불러오는 중...</td></tr> : visibleOrders.length === 0 ? <tr><td colSpan={5} className="empty-state">조건에 맞는 업무가 없습니다.</td></tr> : visibleOrders.map((order) => (
+                  {loading ? <tr><td colSpan={6} className="empty-state">불러오는 중...</td></tr> : visibleOrders.length === 0 ? <tr><td colSpan={6} className="empty-state">조건에 맞는 업무가 없습니다.</td></tr> : visibleOrders.map((order) => (
                     <tr key={order.id} className={selectedOrder?.id === order.id ? 'selected-row' : ''}>
                       <td><strong>{order.title}</strong><small className="cell-note">{formatDate(order.updatedAt)} 갱신</small></td>
                       <td><button className="text-button customer-link" onClick={() => setSelectedCustomerId(order.customerId)}>{order.customerName}</button></td>
                       <td>{order.assignee}</td>
+                      <td><strong>{priorityLabels[order.priority]}</strong><small className="cell-note">{order.dueDate ?? '마감일 없음'}</small></td>
                       <td><span className={`work-status status-${order.status.toLowerCase()}`}>{statusLabels[order.status]}</span></td>
                       <td className="actions work-actions">
                         <button className="text-button history-button" onClick={() => void loadOrderActivities(order)}>이력</button>
                         {nextActions(order.status).map((action) => <button key={action.status} className={action.status === 'CANCELLED' ? 'text-button danger' : 'text-button'} onClick={() => void transitionOrder(order, action.status)}>{action.label}</button>)}
-                        {nextActions(order.status).length === 0 && <span className="terminal-state">종료</span>}
+                        {order.status === 'IN_PROGRESS' && <span className="role-note">승인 요청 필요</span>}
+                        {order.status === 'WAITING_APPROVAL' && <span className="role-note">관리자 결정 대기</span>}
+                        {isTerminal(order.status) && <span className="terminal-state">종료</span>}
                       </td>
                     </tr>
                   ))}
@@ -564,6 +605,8 @@ export default function App() {
                 <label>업무명<input value={workForm.title} onChange={(event) => setWorkForm({ ...workForm, title: event.target.value })} maxLength={160} required /></label>
                 <label>고객<select value={workForm.customerId || ''} onChange={(event) => setWorkForm({ ...workForm, customerId: Number(event.target.value) })} required><option value="">고객 선택</option>{customers.filter((customer) => customer.status !== 'INACTIVE').map((customer) => <option key={customer.id} value={customer.id}>{customer.companyName} · {customerStatusLabels[customer.status]}</option>)}</select></label>
                 <label>담당자<input value={workForm.assignee} onChange={(event) => setWorkForm({ ...workForm, assignee: event.target.value })} maxLength={100} required /></label>
+                <label>우선순위<select value={workForm.priority ?? 'NORMAL'} onChange={(event) => setWorkForm({ ...workForm, priority: event.target.value as WorkOrderPriority })}><option value="LOW">낮음</option><option value="NORMAL">보통</option><option value="HIGH">높음</option><option value="URGENT">긴급</option></select></label>
+                <label>마감일<input type="date" value={workForm.dueDate ?? ''} onChange={(event) => setWorkForm({ ...workForm, dueDate: event.target.value || null })} /></label>
                 <button className="primary-button" type="submit" disabled={workSaving}>{workSaving ? '접수 중...' : '업무 접수'}</button>
               </form>
             </aside>
@@ -571,7 +614,7 @@ export default function App() {
 
           <div className="activity-log">
             {!selectedOrder ? (
-              <div className="activity-placeholder"><div><p className="eyebrow">AUDIT HISTORY</p><h3>업무의 변경 이력을 확인합니다.</h3></div><p>업무 행의 ‘이력’을 선택하면 생성자와 상태 변경 사용자, 이전/다음 상태, 시각을 확인할 수 있습니다.</p></div>
+              <div className="activity-placeholder"><div><p className="eyebrow">AUDIT HISTORY</p><h3>업무의 변경 이력을 확인합니다.</h3></div><p>업무 행의 ‘이력’을 선택하면 생성, 상태 전이, 승인 요청과 승인/반려 사용자 및 시각을 확인할 수 있습니다.</p></div>
             ) : (
               <>
                 <div className="activity-heading"><div><p className="eyebrow">AUDIT HISTORY · #{selectedOrder.id}</p><h3>{selectedOrder.title}</h3><p className="muted">{selectedOrder.customerName} · {selectedOrder.assignee}</p></div><button className="secondary-button compact-button" type="button" onClick={() => void loadOrderActivities(selectedOrder)}>새로고침</button></div>
@@ -593,8 +636,16 @@ export default function App() {
         </section>
 
         <section id="delivery" className="delivery-panel">
-          <div><p className="eyebrow">CLIENT VALUE</p><h3>V5가 증명하는 외주 범위</h3></div>
-          <ul><li>React/TypeScript 관리자 화면</li><li>Spring Boot + MyBatis REST API</li><li>고객/거래처 CRM 도메인</li><li>Customer ↔ Work Order 관계형 설계</li><li>Spring Security ADMIN/STAFF RBAC</li><li>트랜잭션 Audit Log와 상태 머신</li></ul>
+          <div><p className="eyebrow">CLIENT VALUE</p><h3>V8이 증명하는 외주 범위</h3></div>
+          <ul>
+            <li>React/TypeScript 관리자 화면</li>
+            <li>Spring Boot + MyBatis REST API</li>
+            <li>고객/거래처 CRM과 관계형 업무 설계</li>
+            <li>우선순위·마감일·서버 Analytics</li>
+            <li>Spring Security ADMIN/STAFF RBAC</li>
+            <li>승인 게이트 + 트랜잭션 Audit Log</li>
+            <li>기간별 CSV/XLSX 운영 리포트</li>
+          </ul>
         </section>
       </main>
     </div>
