@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,6 +58,32 @@ public interface WorkOrderMapper {
             </script>
             """)
     List<WorkOrder> findAll(@Param("status") WorkOrderStatus status);
+
+    @Select("""
+            <script>
+            SELECT wo.id,
+                   wo.title,
+                   wo.customer_id,
+                   c.company_name AS customer_name,
+                   wo.assignee,
+                   wo.status,
+                   wo.priority,
+                   wo.due_date,
+                   wo.created_at,
+                   wo.updated_at
+            FROM work_orders wo
+            JOIN customers c ON c.id = wo.customer_id
+            <where>
+              <if test='from != null'>CAST(wo.created_at AS DATE) &gt;= #{from}</if>
+              <if test='to != null'>AND CAST(wo.created_at AS DATE) &lt;= #{to}</if>
+            </where>
+            ORDER BY wo.created_at ASC, wo.id ASC
+            </script>
+            """)
+    List<WorkOrder> findForReport(
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to
+    );
 
     @Insert("""
             INSERT INTO work_orders (title, customer_id, assignee, status, priority, due_date)
