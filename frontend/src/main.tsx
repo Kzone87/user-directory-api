@@ -9,6 +9,7 @@ import './customer.css';
 import './planning.css';
 import './analytics.css';
 import './approval-reporting.css';
+import './product-ui.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
