@@ -43,7 +43,11 @@ export default function AnalyticsPanel() {
   useEffect(() => {
     const handler = () => void refresh();
     window.addEventListener('business-ops-auth-change', handler);
-    return () => window.removeEventListener('business-ops-auth-change', handler);
+    window.addEventListener('business-ops-data-change', handler);
+    return () => {
+      window.removeEventListener('business-ops-auth-change', handler);
+      window.removeEventListener('business-ops-data-change', handler);
+    };
   }, []);
 
   if (!data) {
@@ -53,14 +57,14 @@ export default function AnalyticsPanel() {
   return (
     <section className="analytics-shell" aria-label="운영 Analytics">
       <div className="analytics-heading">
-        <div><strong>OPERATIONS ANALYTICS · V7</strong><span>Server-side aggregation</span></div>
+        <div><strong>OPERATIONS ANALYTICS · V8</strong><span>Server-side aggregation / approval-aware</span></div>
         <button type="button" onClick={() => void refresh()} disabled={loading}>{loading ? '집계 중...' : '새로고침'}</button>
       </div>
 
       <div className="analytics-kpis">
         <article><span>전체 고객</span><b>{data.totalCustomers}</b><small>활성 {data.activeCustomers}</small></article>
-        <article><span>진행 가능 업무</span><b>{data.openWorkOrders}</b><small>RECEIVED + IN_PROGRESS</small></article>
-        <article className={data.overdueWorkOrders ? 'danger' : ''}><span>기한 초과</span><b>{data.overdueWorkOrders}</b><small>종료/취소 제외</small></article>
+        <article><span>열린 업무</span><b>{data.openWorkOrders}</b><small>DONE / CANCELLED 제외</small></article>
+        <article className={data.overdueWorkOrders ? 'danger' : ''}><span>기한 초과</span><b>{data.overdueWorkOrders}</b><small>승인 대기 포함</small></article>
         <article><span>이번 달 완료</span><b>{data.doneThisMonth}</b><small>DONE 기준</small></article>
       </div>
 
