@@ -14,7 +14,7 @@ public interface AnalyticsMapper {
     @Select("SELECT COUNT(*) FROM customers WHERE status = 'ACTIVE'")
     long countActiveCustomers();
 
-    @Select("SELECT COUNT(*) FROM work_orders WHERE status IN ('RECEIVED', 'IN_PROGRESS')")
+    @Select("SELECT COUNT(*) FROM work_orders WHERE status NOT IN ('DONE', 'CANCELLED')")
     long countOpenWorkOrders();
 
     @Select("""
@@ -42,8 +42,11 @@ public interface AnalyticsMapper {
             ORDER BY CASE status
               WHEN 'RECEIVED' THEN 1
               WHEN 'IN_PROGRESS' THEN 2
-              WHEN 'DONE' THEN 3
-              ELSE 4
+              WHEN 'WAITING_APPROVAL' THEN 3
+              WHEN 'APPROVED' THEN 4
+              WHEN 'DONE' THEN 5
+              WHEN 'CANCELLED' THEN 6
+              ELSE 7
             END
             """)
     List<AnalyticsBucket> statusDistribution();
@@ -64,7 +67,7 @@ public interface AnalyticsMapper {
     @Select("""
             SELECT assignee AS label, COUNT(*) AS count
             FROM work_orders
-            WHERE status IN ('RECEIVED', 'IN_PROGRESS')
+            WHERE status NOT IN ('DONE', 'CANCELLED')
             GROUP BY assignee
             ORDER BY count DESC, assignee ASC
             """)

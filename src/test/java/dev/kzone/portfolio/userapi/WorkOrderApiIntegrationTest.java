@@ -9,6 +9,8 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -31,14 +33,15 @@ class WorkOrderApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(4)))
                 .andExpect(jsonPath("$[0].priority").value("URGENT"))
-                .andExpect(jsonPath("$[0].dueDate").value("2026-09-05"));
+                .andExpect(jsonPath("$[0].dueDate").value(LocalDate.now().plusDays(1).toString()));
 
         mockMvc.perform(get("/api/work-orders").param("status", "IN_PROGRESS"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].customerId").value(2))
                 .andExpect(jsonPath("$[0].customerName").value("Beta Tech"))
-                .andExpect(jsonPath("$[0].priority").value("HIGH"));
+                .andExpect(jsonPath("$[0].priority").value("HIGH"))
+                .andExpect(jsonPath("$[0].dueDate").value(LocalDate.now().minusDays(1).toString()));
     }
 
     @Test

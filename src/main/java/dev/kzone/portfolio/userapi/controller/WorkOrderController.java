@@ -1,7 +1,10 @@
 package dev.kzone.portfolio.userapi.controller;
 
 import dev.kzone.portfolio.userapi.domain.WorkOrderStatus;
+import dev.kzone.portfolio.userapi.dto.ApprovalDecisionRequest;
+import dev.kzone.portfolio.userapi.dto.ApprovalRequest;
 import dev.kzone.portfolio.userapi.dto.WorkOrderActivityResponse;
+import dev.kzone.portfolio.userapi.dto.WorkOrderApprovalResponse;
 import dev.kzone.portfolio.userapi.dto.WorkOrderCreateRequest;
 import dev.kzone.portfolio.userapi.dto.WorkOrderResponse;
 import dev.kzone.portfolio.userapi.dto.WorkOrderStatusUpdateRequest;
@@ -45,6 +48,11 @@ public class WorkOrderController {
         return workOrderService.activities(id);
     }
 
+    @GetMapping("/{id}/approvals")
+    public List<WorkOrderApprovalResponse> approvals(@PathVariable long id) {
+        return workOrderService.approvals(id);
+    }
+
     @PostMapping
     public ResponseEntity<WorkOrderResponse> create(
             @Valid @RequestBody WorkOrderCreateRequest request,
@@ -61,5 +69,23 @@ public class WorkOrderController {
             Authentication authentication
     ) {
         return workOrderService.transition(id, request.status(), authentication.getName());
+    }
+
+    @PostMapping("/{id}/approval-request")
+    public WorkOrderApprovalResponse requestApproval(
+            @PathVariable long id,
+            @Valid @RequestBody ApprovalRequest request,
+            Authentication authentication
+    ) {
+        return workOrderService.requestApproval(id, request, authentication.getName());
+    }
+
+    @PostMapping("/{id}/approval-decision")
+    public WorkOrderResponse decideApproval(
+            @PathVariable long id,
+            @Valid @RequestBody ApprovalDecisionRequest request,
+            Authentication authentication
+    ) {
+        return workOrderService.decideApproval(id, request, authentication.getName());
     }
 }

@@ -6,6 +6,8 @@ import java.util.Set;
 public enum WorkOrderStatus {
     RECEIVED,
     IN_PROGRESS,
+    WAITING_APPROVAL,
+    APPROVED,
     DONE,
     CANCELLED;
 
@@ -15,7 +17,9 @@ public enum WorkOrderStatus {
         }
         Set<WorkOrderStatus> allowed = switch (this) {
             case RECEIVED -> EnumSet.of(IN_PROGRESS, CANCELLED);
-            case IN_PROGRESS -> EnumSet.of(DONE, CANCELLED);
+            case IN_PROGRESS -> EnumSet.of(CANCELLED);
+            case WAITING_APPROVAL -> EnumSet.noneOf(WorkOrderStatus.class);
+            case APPROVED -> EnumSet.of(DONE, CANCELLED);
             case DONE, CANCELLED -> EnumSet.noneOf(WorkOrderStatus.class);
         };
         return allowed.contains(next);
