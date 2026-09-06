@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/work-orders/*/approval-decision").hasRole("ADMIN")
                         .requestMatchers("/api/**").hasAnyRole("ADMIN", "STAFF")
                         .anyRequest().permitAll()
                 )
