@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
+  announceDataChange,
   createWorkOrder,
   Customer,
   listCustomers,
@@ -50,7 +51,11 @@ export default function PlanningPanel() {
   useEffect(() => {
     const handler = () => void refresh();
     window.addEventListener('business-ops-auth-change', handler);
-    return () => window.removeEventListener('business-ops-auth-change', handler);
+    window.addEventListener('business-ops-data-change', handler);
+    return () => {
+      window.removeEventListener('business-ops-auth-change', handler);
+      window.removeEventListener('business-ops-data-change', handler);
+    };
   }, []);
 
   const summary = useMemo(() => {
@@ -61,6 +66,7 @@ export default function PlanningPanel() {
       today: open.filter((order) => order.dueDate === today).length,
       urgent: open.filter((order) => order.priority === 'URGENT').length,
       inProgress: open.filter((order) => order.status === 'IN_PROGRESS').length,
+      approvalQueue: open.filter((order) => order.status === 'WAITING_APPROVAL').length,
       focus: open.filter((order) => order.priority === 'URGENT' || order.priority === 'HIGH').slice(0,4)
     };
   }, [orders]);
@@ -87,6 +93,7 @@ export default function PlanningPanel() {
       setForm({title:'',customerId:0,assignee:'',priority:'NORMAL',dueDate:''});
       setMessage('우선순위와 마감일을 포함해 업무를 접수했습니다.');
       await refresh();
+      announceDataChange();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '업무를 접수하지 못했습니다.');
     } finally {
@@ -98,12 +105,13 @@ export default function PlanningPanel() {
 
   return (
     <aside className="planning-panel" aria-label="업무 우선순위 현황">
-      <div className="planning-title"><strong>WORK PLANNING · V6</strong><span>Priority / Due date</span></div>
+      <div className="planning-title"><strong>WORK PLANNING · V8</strong><span>Priority / Due date / Approval queue</span></div>
       <div className="planning-metrics">
         <span><b>{summary.overdue}</b>기한 초과</span>
         <span><b>{summary.today}</b>오늘 마감</span>
         <span><b>{summary.urgent}</b>긴급</span>
         <span><b>{summary.inProgress}</b>진행 중</span>
+        <span><b>{summary.approvalQueue}</b>승인 대기</span>
       </div>
       {summary.focus.length > 0 && <div className="planning-focus">{summary.focus.map((order) => <span key={order.id}><b>{order.priority}</b>{order.title}{order.dueDate ? ` · ${order.dueDate}` : ''}</span>)}</div>}
 
