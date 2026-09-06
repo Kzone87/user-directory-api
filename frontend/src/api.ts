@@ -15,6 +15,18 @@ export type WorkOrder = { id:number; title:string; customerId:number; customerNa
 export type WorkOrderInput = { title:string; customerId:number; assignee:string; priority?:WorkOrderPriority; dueDate?:string|null };
 export type WorkOrderActivity = { id:number; workOrderId:number; actor:string; action:'CREATED'|'STATUS_CHANGED'; fromStatus:WorkOrderStatus|null; toStatus:WorkOrderStatus|null; detail:string; createdAt:string };
 export type AuthMe = { username:string; roles:string[] };
+export type AnalyticsBucket = { label:string; count:number };
+export type OperationsAnalytics = {
+  totalCustomers:number;
+  activeCustomers:number;
+  openWorkOrders:number;
+  overdueWorkOrders:number;
+  doneThisMonth:number;
+  statusDistribution:AnalyticsBucket[];
+  priorityDistribution:AnalyticsBucket[];
+  workloadByAssignee:AnalyticsBucket[];
+  completedTrend:AnalyticsBucket[];
+};
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 let authorizationHeader: string | null = null;
@@ -67,3 +79,4 @@ export function listWorkOrders(status?:WorkOrderStatus):Promise<WorkOrder[]>{ co
 export function listWorkOrderActivities(id:number):Promise<WorkOrderActivity[]>{ return request<WorkOrderActivity[]>(`/api/work-orders/${id}/activities`); }
 export function createWorkOrder(input:WorkOrderInput):Promise<WorkOrder>{ return request<WorkOrder>('/api/work-orders',{method:'POST',body:JSON.stringify({...input,priority:input.priority??'NORMAL',dueDate:input.dueDate??null})}); }
 export function updateWorkOrderStatus(id:number,status:WorkOrderStatus):Promise<WorkOrder>{ return request<WorkOrder>(`/api/work-orders/${id}/status`,{method:'PATCH',body:JSON.stringify({status})}); }
+export function getOperationsAnalytics():Promise<OperationsAnalytics>{ return request<OperationsAnalytics>('/api/analytics/operations'); }
