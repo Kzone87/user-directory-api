@@ -10,8 +10,18 @@ import {
   requestWorkOrderApproval,
   updateWorkOrderStatus,
   WorkOrder,
-  WorkOrderApproval
+  WorkOrderApproval,
+  WorkOrderStatus
 } from './api';
+
+const statusLabels: Record<WorkOrderStatus, string> = {
+  RECEIVED: '접수',
+  IN_PROGRESS: '진행',
+  WAITING_APPROVAL: '승인 대기',
+  APPROVED: '승인 완료',
+  DONE: '완료',
+  CANCELLED: '취소'
+};
 
 function saveBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -35,7 +45,7 @@ export default function ApprovalReportingPanel() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
-  const isAdmin = principal?.roles.includes('ROLE_ADMIN') ?? false;
+  const isAdmin = principal?.roles.includes('ADMIN') ?? false;
 
   async function refresh() {
     try {
@@ -127,13 +137,13 @@ export default function ApprovalReportingPanel() {
           <p>진행 중 업무는 승인 요청을 거쳐야 완료 상태로 갈 수 있습니다.</p>
           <select aria-label="승인 업무 선택" value={selectedId ?? ''} onChange={(event) => void chooseOrder(Number(event.target.value))}>
             <option value="">업무 선택</option>
-            {actionable.map((order) => <option key={order.id} value={order.id}>{order.status} · {order.title}</option>)}
+            {actionable.map((order) => <option key={order.id} value={order.id}>{statusLabels[order.status]} · {order.title}</option>)}
           </select>
 
           {selected && <div className="approval-selected">
             <strong>{selected.title}</strong>
             <span>{selected.customerName} · {selected.assignee}</span>
-            <em>{selected.status}</em>
+            <em>{statusLabels[selected.status]}</em>
           </div>}
 
           {selected && selected.status === 'IN_PROGRESS' && <form onSubmit={(event: FormEvent) => {
